@@ -6,10 +6,13 @@ const int DOOR_OPEN_DISTANCE = 5;
 
 int triggerDistance_North = D0;
 int echo_North = D1;
-int movementSensor_North = D2;
+int movementSensor = D2;
 int doorControl_North = D3;
 
-//TODO Declare southdoor
+int triggerDistance_South = D4;
+int echo_South = D5;
+int movementSensor_South = D6;
+int doorControl_South = D7;
 
 //declare doors
 GarageDoor doorNorth;
@@ -20,10 +23,10 @@ void setup() {
   pinMode(triggerDistance_North, OUTPUT);
   pinMode(echo_North, INPUT);
   digitalWrite(triggerDistance_North, LOW);
-  digitalWrite(movementSensor_North, LOW);
+  digitalWrite(movementSensor, LOW);
   digitalWrite(doorControl_North, HIGH);
 
-  attachInterrupt(digitalPinToInterrupt(movementSensor_North), movementDetected, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(movementSensor), movementDetected, CHANGE);
 
   doorNorth.setName("doorNorth");
   doorSouth.setName("doorSouth");
@@ -56,14 +59,21 @@ unsigned long  measureDistance(String door) {
     //    Serial.print("Distance for "+door); Serial.print(duration/58);
     return duration / 58;
   } else if (door == "doorSouth") {
-    return -1;
+    digitalWrite(triggerDistance_South, HIGH);
+    delay(10);
+    digitalWrite(triggerDistance_South, LOW);
+    unsigned int duration = pulseIn(echo_South, HIGH);
+    //    Serial.print("Distance for "+door); Serial.print(duration/58);
+    return duration / 58;
   }
 
 
 }
 
 void movementDetected() {
-
+  //TODO - send door states to broker
+  String doorState_North = determineState("doorNorth");
+  String doorState_South = determineState("doorSouth");
 }
 
 String determineState(String doorname) {
@@ -91,7 +101,7 @@ String determineState(String doorname) {
       return "Door open";
     } else if (deltaDoorDistance == 0 && currentDoorDistance > DOOR_OPEN_DISTANCE) {
       return "In between";
-    } return "nada";
+    } 
 
     lastDoorDistance = currentDoorDistance;
     currentDoorDistance = measureDistance(doorname);
