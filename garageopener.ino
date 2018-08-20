@@ -1,7 +1,8 @@
 #include "garageDoor.h"
 
-const int CYCLETIME_DETERMINE_MOVEMENT = 5;//timeout value for when to stop checking distance to door
-
+const int CYCLETIME_DETERMINE_MOVEMENT = 3;//timeout value(seconds) for when to stop checking distance to door
+const int DOOR_CLOSED_DISTANCE = 10; 
+const int DOOR_OPEN_DISTANCE = 5;
 
 int triggerDistance_North = D0;
 int echo_North = D1;
@@ -24,9 +25,11 @@ void setup() {
 
   attachInterrupt(digitalPinToInterrupt(movementSensor_North), movementDetected, CHANGE);
 
-  doorNorth.setName('doorNorth');
-  doorSouth.setName('doorSouth');
+  doorNorth.setName("doorNorth");
+  doorSouth.setName("doorSouth");
 
+  determineDoorState(doorNorth.getName());
+  determineDoorState(doorSouth.getName());
 }
 
 void loop() {
@@ -43,16 +46,16 @@ void loop() {
 
 
 
-unsigned long  measureDistance(char door) {
+unsigned long  measureDistance(String door) {
 
-  if (door == 'doorNorth') {
+  if (door == "doorNorth") {
     digitalWrite(triggerDistance_North, HIGH);
     delay(10);
     digitalWrite(triggerDistance_North, LOW);
     unsigned int duration = pulseIn(echo_North, HIGH);
-    Serial.println("heyhey");
+    Serial.println("Distance for "+door);
     return duration / 58;
-  } else if (door == 'doorSouth') {
+  } else if (door == "doorSouth") {
     return -1;
   }
 
@@ -60,11 +63,34 @@ unsigned long  measureDistance(char door) {
 }
 
 void movementDetected() {
+  
 }
 
-void determineDoorState(char door) {
-  if(door = 'doorNorth'){
-    Serial.println("yeaah");
+void determineDoorState(String doorname) {
+  int doorDistance = measureDistance(doorname); 
+  int deltaDoorDistance = doorDistance;
+  
+  for(int i=0;i<CYCLETIME_DETERMINE_MOVEMENT; i++){
+    if(doorDistance > DOOR_CLOSED_DISTANCE && deltaDoorDistance == 0){
+      Serial.println("Door closed");
+    }else if(deltaDoorDistance > 0){
+      Serial.println("Door opening");
+    }else if(deltaDoorDistance < 0){
+      Serial.println("Door closing");
+    }  else if(deltaDoorDistance > 0){
+      Serial.println("Door opening");
+    }else if(doorDistance < DOOR_OPEN_DISTANCE){
+      Serial.println("Door open");
+    }else if(deltaDoorDistance == 0 && doorDistance > DOOR_OPEN_DISTANCE){
+      Serial.println("Door open, but not closed");
+    }
+  }
+  
+  
+  if(doorname == "doorNorth"){
+    Serial.println("Doorstate for door " + doorname);
+  }else if(doorname == "doorSouth"){
+    Serial.println("Doorstate for door " + doorname);
   }
 
 }

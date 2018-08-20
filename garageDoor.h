@@ -1,14 +1,12 @@
 
 class GarageDoor{
-    const int DOOR_CLOSED_DISTANCE = 10; 
-    const int DOOR_OPEN_DISTANCE = 5;
-    
+   
     
     int doorDistance = 0;
-    char doorName;
+    String doorName ="";
     
     public:
-      enum class DoorState {open, opening, closed, closing, inbetween};
+      enum class DoorState {opened, opening, closed, closing, inbetween};
       DoorState doorState = DoorState::inbetween;
       void setDistance(int distance){
         doorDistance = distance;
@@ -17,10 +15,10 @@ class GarageDoor{
         return doorDistance;
       }
 
-      void setName(char name){
-        doorName = name;
+      void setName(String doorname){
+        doorName = doorname;
       }
-      char getName(){
+      String getName(){
         return doorName;
       }
       
