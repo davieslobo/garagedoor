@@ -29,7 +29,10 @@ class GarageDoor{
       DoorState getState(){
         return doorState;  
       }
-      
+
+      char * openDoor(){
+        return  "Open sesame";
+      }
       
 };
 

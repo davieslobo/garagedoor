@@ -1,9 +1,12 @@
 #include "garageDoor.h"
+#include "transport.h"
 
 const int CYCLETIME_DETERMINE_MOVEMENT = 5;//timeout value(seconds) for when to stop checking distance to door
 const int DOOR_CLOSED_DISTANCE = 15;
 const int DOOR_OPEN_DISTANCE = 5;
+const String MQTT_TOPIC = "Elgvegen1/Garage/";
 
+//declare doors
 int triggerDistance_North = D0;
 int echo_North = D1;
 int movementSensor = D2;
@@ -14,9 +17,12 @@ int echo_South = D5;
 int movementSensor_South = D6;
 int doorControl_South = D7;
 
-//declare doors
+
 GarageDoor doorNorth;
 GarageDoor doorSouth;
+
+
+
 
 void setup() {
   Serial.begin(115000);
@@ -28,26 +34,37 @@ void setup() {
 
   attachInterrupt(digitalPinToInterrupt(movementSensor), movementDetected, CHANGE);
 
+
+  //initialize doors
   doorNorth.setName("doorNorth");
   doorSouth.setName("doorSouth");
 
   determineState(doorNorth.getName());
   //  determineState(doorSouth.getName());
+
+  //init Wifi and MQTT connection
+  wifiConnect();
+  mqttInit();
+  mqttConnect();
+
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
 
+  while (WiFi.status() != WL_CONNECTED) {
+    wifiConnect();
+
+  }
   for (int i = 5; i > 0; i--) {
     Serial.print("Detect doorstatus in "); Serial.print(i);
     Serial.println("");
     delay(1000);
   }
-  Serial.println(determineState(doorNorth.getName()));
-
+    Serial.println(determineState(doorNorth.getName()));
+  mqttPublish(MQTT_TOPIC + doorNorth.getName(), determineState(doorNorth.getName()));
+  mqttClient.loop();
 }
-
-
 
 unsigned long  measureDistance(String door) {
 
@@ -84,41 +101,34 @@ String determineState(String doorname) {
   currentDoorDistance = measureDistance(doorname);
   int deltaDoorDistance = lastDoorDistance - currentDoorDistance;
 
-  for (int i = 0; i < CYCLETIME_DETERMINE_MOVEMENT; i++) {
-    Serial.print("DoorDistance "); Serial.println(currentDoorDistance);
-    Serial.print("Delta"); Serial.println(deltaDoorDistance);
 
-    if (currentDoorDistance > DOOR_CLOSED_DISTANCE && deltaDoorDistance == 0) {
-      Serial.println("Door closed");
+      Serial.print("DoorDistance "); Serial.println(currentDoorDistance);
+      Serial.print("Delta"); Serial.println(deltaDoorDistance);
 
-    } else if (deltaDoorDistance > 0) {
-      return "Door opening";
-    } else if (deltaDoorDistance < 0) {
-      return "Door closing";
-    }  else if (deltaDoorDistance == 0 && currentDoorDistance >= DOOR_CLOSED_DISTANCE) {
-      return "Door closed";
-    } else if (deltaDoorDistance == 0 && currentDoorDistance < DOOR_OPEN_DISTANCE) {
-      return "Door open";
-    } else if (deltaDoorDistance == 0 && currentDoorDistance > DOOR_OPEN_DISTANCE) {
-      return "In between";
-    } 
+  if (currentDoorDistance > DOOR_CLOSED_DISTANCE && deltaDoorDistance == 0) {
+    Serial.println("Door closed");
 
-    lastDoorDistance = currentDoorDistance;
-    currentDoorDistance = measureDistance(doorname);
-    deltaDoorDistance = lastDoorDistance - currentDoorDistance;
+  } else if (deltaDoorDistance > 0) {
+    return "Door opening";
+  } else if (deltaDoorDistance < 0) {
+    return "Door closing";
+  }  else if (deltaDoorDistance == 0 && currentDoorDistance >= DOOR_CLOSED_DISTANCE) {
+    return "Door closed";
+  } else if (deltaDoorDistance == 0 && currentDoorDistance < DOOR_OPEN_DISTANCE) {
+    return "Door open";
+  } else if (deltaDoorDistance == 0 && currentDoorDistance > DOOR_OPEN_DISTANCE) {
+    return "In between";
+  } else return "oops, no state configured";
 
-    delay(1000);
-  }
+
+//  lastDoorDistance = currentDoorDistance;
+//  currentDoorDistance = measureDistance(doorname);
+//  deltaDoorDistance = lastDoorDistance - currentDoorDistance;
+
+  delay(1000);
+
   Serial.println("**************************");
 
-
-  /*
-    if(doorname == "doorNorth"){
-      Serial.println("Doorstate for door " + doorname);
-    }else if(doorname == "doorSouth"){
-      Serial.println("Doorstate for door " + doorname);
-    }
-  */
 }
 
 
